@@ -1,72 +1,75 @@
-#include <Arduino.h>
-#include <SoftwareSerial.h>
-#include <Wire.h>
-#include <RTClib.h>
+#include <main.h>
 
 int LED = 2;
-/* Địa chỉ của DS1307 */
-const byte DS1307 = 0x68;
-/* Số byte dữ liệu sẽ đọc từ DS1307 */
-const byte NumberOfFields = 7;
-
-/* khai báo các biến thời gian */
-int second, minute, hour, day, wday, month, year;
-
-SoftwareSerial lcdSerial(16, 17);    // RX, TX'
-SoftwareSerial sensorSerial(25, 26); // RX, TX'
-
-RTC_DS1307 rtc;
 char daysOfTheWeek[7][12] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-void readDS1307();
 
-// void setup() {
-//   pinMode(LED, OUTPUT);
-//   lcdSerial.begin(9600);
-//   sensorSerial.begin(115200);
-//   Serial.begin(115200);
-//   /* cài đặt thời gian cho module */
-//   setTime(11, 42, 06, 5, 3, 12, 20); // 12:30:45 CN 08-02-2015
-//   Wire.begin();
-//   Serial.println("Khoi tao xong DS1307");
-//   Serial.println("Bat dau chuong trinh");
-// }
 
+//  void setup ===========================================================================================
 void setup()
 {
+  initSetup();
+}
+
+void loop()
+{
+  // lcdSerial.println("Hello world");
+  // statusGPIO(LED, TOGGLE);
+  if (lcdSerial.available ()) {
+    lcdSerial.print (char (lcdSerial.read ()));
+  } 
+  else
+  {
+    delay(1);
+  } 
+}
+
+//  Setup ==================================================
+void initSetup()
+{
   Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+  lcdSerial.begin(9600);
+  sensorSerial.begin(115200);
+  initDS1307();
+  writeDS1307(9, 51, 0, 7, 5, 12, 20);
+}
+//  GPIO ========================================================
+void statusGPIO(int GPIO, int Status)
+{
+  switch (Status)
+  {
+  case LOW:
+    digitalWrite(GPIO, LOW);
+    break;
+  case HIGH:
+    digitalWrite(GPIO, HIGH);
+    break;
+  case TOGGLE:
+    int stt = digitalRead(GPIO);
+    digitalWrite(GPIO, !stt);
+    break;  
+  }
+}
+//  DS1307 RTC ==================================================
+void initDS1307()
+{
+  Serial.println("Begin RTC");
   if (!rtc.begin())
   {
-    Serial.print("Couldn't find RTC");
-    while (1)
-      ;
+    Serial.println("Couldn't find RTC");
   }
 
   if (!rtc.isrunning())
   {
-    Serial.print("RTC is NOT running!");
-    Serial.println();
+    Serial.println("RTC is NOT running!");
   }
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  rtc.adjust(DateTime(2020, 12, 4, 12, 05, 0));
 }
-void loop()
+void writeDS1307(uint8_t hour, uint8_t min, uint8_t sec, uint8_t day, uint8_t date, uint8_t month, uint16_t year)
 {
-
-  delay(1000);
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  year = year + 2000;
+  rtc.adjust(DateTime(year, month, date, hour, min, sec));
 }
-
-// void loop() {
-//     // lcdSerial.println("Hello lcd 2");
-//     // sensorSerial.println("Hello sensor 6");
-//     readDS1307();
-//     digitalClockDisplay();
-//     delay(1000);
-//     // digitalWrite(LED, LOW);
-//     // delay(500);
-//     // digitalWrite(LED, HIGH);
-//     // scanAddressI2c();
-// }
-
 void readDS1307()
 {
   DateTime now = rtc.now();
@@ -134,3 +137,4 @@ void readDS1307()
   }
   Serial.println();
 }
+// =============================================================
