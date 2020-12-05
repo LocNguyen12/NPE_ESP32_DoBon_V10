@@ -3,24 +3,55 @@
 int LED = 2;
 char daysOfTheWeek[7][12] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
+void toggleLED(void *parameter)
+{
+  for (;;)
+  {
+    statusGPIO(LED, TOGGLE);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
+}
+
+void sensorWork(void *parameter)
+{
+  for (;;)
+  {
+    // if (lcdSerial.available())
+    // {
+    //   lcdSerial.print(char(lcdSerial.read()));
+    // }
+    vTaskDelay(1 / portTICK_PERIOD_MS );
+  }
+}
+
+// void sensorWork(void *parameter)
+// {
+//   for (;;)
+//   {
+//     sensorSerial.println("Hello sensor");
+//     vTaskDelay(1000 / portTICK_PERIOD_MS );
+//   }
+// }
 
 //  void setup ===========================================================================================
 void setup()
 {
   initSetup();
+
+  xTaskCreate(toggleLED, "Toggle LED", 1000, NULL, 2, NULL);
+  xTaskCreate(sensorWork, "sensorWork", 1000, NULL, 1, NULL);
 }
 
 void loop()
 {
-  // lcdSerial.println("Hello world");
-  // statusGPIO(LED, TOGGLE);
-  if (lcdSerial.available ()) {
-    lcdSerial.print (char (lcdSerial.read ()));
-  } 
-  else
-  {
-    delay(1);
-  } 
+    if (lcdSerial.available())
+    {
+      lcdSerial.print(char(lcdSerial.read()));
+    }
+    if (sensorSerial.available())
+    {
+      sensorSerial.print(char(sensorSerial.read()));
+    }
 }
 
 //  Setup ==================================================
@@ -29,7 +60,7 @@ void initSetup()
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
   lcdSerial.begin(9600);
-  sensorSerial.begin(115200);
+  sensorSerial.begin(9600);
   initDS1307();
   writeDS1307(9, 51, 0, 7, 5, 12, 20);
 }
@@ -47,7 +78,7 @@ void statusGPIO(int GPIO, int Status)
   case TOGGLE:
     int stt = digitalRead(GPIO);
     digitalWrite(GPIO, !stt);
-    break;  
+    break;
   }
 }
 //  DS1307 RTC ==================================================
